@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskFlow</title>
+    <style>
+        /* Базові стилі та скидання */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #2b1165; 
+            color: #ffffff;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Шапка */
+        header {
+            background-color: #1e2126;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .board-title {
+            font-size: 1.2rem;
+            font-weight: 400;
+            margin: 0 auto;
+        }
+
+        .share-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            position: absolute;
+            right: 20px;
+        }
+
+        .share-btn:hover {
+            background-color: #45a049;
+        }
+
+        /* Контейнер дошки */
+        .board-container {
+            display: flex;
+            flex-wrap: nowrap;
+            padding: 20px;
+            overflow-x: auto;
+            flex-grow: 1;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        /* Колонка */
+        .column {
+            background-color: transparent;
+            border: 2px solid #4a3499;
+            border-radius: 12px;
+            width: 280px;
+            min-width: 280px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .column-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .column-title {
+            font-size: 1.2rem;
+            font-weight: 500;
+        }
+
+        .column-info {
+            font-size: 0.5rem;
+            text-align: right;
+            max-width: 50%;
+            opacity: 0.8;
+        }
+
+        /* Картка */
+        .card {
+            background-color: #222222;
+            border-radius: 8px;
+            padding: 10px 15px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .card-delete-btn {
+            background: none;
+            border: none;
+            color: #aaaaaa;
+            text-align: right;
+            font-size: 0.8rem;
+            cursor: pointer;
+            margin-bottom: 5px;
+        }
+
+        .card-delete-btn:hover {
+            color: #ff4444;
+        }
+
+        .card-content {
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        /* Кнопки */
+        .add-card-btn {
+            background-color: #1e1e1e;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            padding: 5px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            margin-top: 5px;
+        }
+
+        .add-card-btn:hover {
+            background-color: #333333;
+        }
+
+        .add-column-wrapper {
+            min-width: 280px;
+        }
+
+        .add-column-btn {
+            background-color: #1e1e1e;
+            border: none;
+            color: white;
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            font-size: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .add-column-btn:hover {
+            background-color: #2a2a2a;
+        }
+
+        ::-webkit-scrollbar {
+            height: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a3499; 
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="board-title">Назва дошки</div>
+        <button class="share-btn" id="exportBtn">Поділитися</button>
+    </header>
+
+    <div class="board-container" id="board">
+        
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">Текст</div>
+                <div class="column-info">Інформація про стовпець (кількість карток)</div>
+            </div>
+            
+            <div class="card">
+                <button class="card-delete-btn">Видалити</button>
+                <div class="card-content">
+                    PNG (якщо користувач вставив її)<br><br>
+                    Контент
+                </div>
+            </div>
+            
+            <div class="card">
+                <button class="card-delete-btn">Видалити</button>
+                <div class="card-content">
+                    PNG (якщо користувач вставив її)<br><br>
+                    Контент
+                </div>
+            </div>
+
+            <button class="add-card-btn">+</button>
+        </div>
+
+        <div class="column">
+            <div class="column-header">
+                <div class="column-title">Текст</div>
+                <div class="column-info">Інформація про стовпець (кількість карток)</div>
+            </div>
+            
+            <div class="card">
+                <button class="card-delete-btn">Видалити</button>
+                <div class="card-content">
+                    PNG (якщо користувач вставив її)<br><br>
+                    Контент
+                </div>
+            </div>
+
+            <button class="add-card-btn">+</button>
+        </div>
+
+        <div class="add-column-wrapper">
+            <button class="add-column-btn">Додати колонку</button>
+        </div>
+
+    </div>
+
+</body>
+</html>
