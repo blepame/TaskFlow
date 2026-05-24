@@ -1,0 +1,231 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #2b1165; 
+    color: #ffffff;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.board-header {
+    background-color: #1e2126;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.board-title {
+    font-size: 1.2rem;
+    font-weight: 400;
+}
+
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.header-btn {
+    background-color: #3d2c5e;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.header-btn:hover { background-color: #553f82; }
+
+.share-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.share-btn:hover { background-color: #45a049; }
+
+.board-container {
+    display: flex;
+    align-items: flex-start;
+    padding: 20px;
+    gap: 15px;
+    overflow-x: auto;
+    flex-grow: 1;
+}
+
+.column {
+    background-color: transparent;
+    border: 2px solid #4a3499;
+    border-radius: 12px;
+    min-width: 280px;
+    max-width: 280px;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.column-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.column-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+}
+
+.column-info {
+    font-size: 0.6rem;
+    text-align: right;
+    max-width: 50%;
+    opacity: 0.8;
+}
+
+.column-options-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 20px; 
+}
+
+.card {
+    background-color: #222222;
+    border-radius: 8px;
+    padding: 10px 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    cursor: grab;
+}
+
+.card:active { cursor: grabbing; }
+
+.delete-card-btn {
+    align-self: flex-end;
+    background: none;
+    border: none;
+    color: #aaaaaa;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.delete-card-btn:hover { color: #ff4444; }
+
+.card-image-placeholder {
+    background-color: #3a3a3a;
+    border-radius: 8px;
+    padding: 20px 10px;
+    text-align: center;
+    font-size: 12px;
+    color: #aaaaaa;
+}
+
+.card-content {
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.add-card-btn {
+    background-color: #1e1e1e;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 5px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+.add-card-btn:hover { background-color: #333333; }
+
+.add-column-wrapper { min-width: 280px; }
+
+.add-column-btn {
+    background-color: #1e1e1e;
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.add-column-btn:hover { background-color: #2a2a2a; }
+
+/* Кастомный скроллбар Саши */
+::-webkit-scrollbar { height: 12px; }
+::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.2); }
+::-webkit-scrollbar-thumb {
+    background: #4a3499; 
+    border-radius: 6px;
+}
+
+/* Модальное окно */
+.modal {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal.hidden { display: none; }
+
+.modal-content {
+    background-color: #272727;
+    padding: 20px;
+    border-radius: 10px;
+    width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    position: relative;
+}
+
+.close-btn {
+    position: absolute;
+    top: 10px; right: 15px;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.modal-text-input {
+    padding: 10px;
+    border-radius: 5px;
+    border: none;
+    background-color: #3a3a3a;
+    color: white;
+}
+
+.add-image-btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; background-color: #4b36c4; color: white; }
+.save-modal-btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; background-color: #28a745; color: white; }
