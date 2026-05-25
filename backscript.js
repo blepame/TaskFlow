@@ -9,6 +9,47 @@ dragStyles.innerHTML = `
 `;
 document.head.appendChild(dragStyles);
 
+const savedBg = localStorage.getItem('boardBackground');
+if (savedBg) {
+    document.body.style.background = savedBg.startsWith('#') ? savedBg : `url(${savedBg}) center/cover`;
+}
+
+const boardTitle = document.querySelector('.board-title');
+if (boardTitle) {
+    const savedTitle = localStorage.getItem('boardTitle');
+    if (savedTitle) {
+        boardTitle.textContent = savedTitle;
+    }
+
+    boardTitle.contentEditable = 'true';
+    boardTitle.style.cursor = 'text';
+    boardTitle.style.outline = 'none';
+    boardTitle.style.userSelect = 'auto'; 
+    boardTitle.style.pointerEvents = 'auto';
+    boardTitle.style.position = 'relative';
+    boardTitle.style.zIndex = '1000';
+
+    boardTitle.addEventListener('click', () => {
+        boardTitle.focus();
+    });
+
+    boardTitle.addEventListener('focus', () => {
+        boardTitle.style.borderBottom = '1px dashed rgba(255, 255, 255, 0.5)';
+    });
+
+    boardTitle.addEventListener('blur', () => {
+        boardTitle.style.borderBottom = 'none';
+        localStorage.setItem('boardTitle', boardTitle.textContent.trim());
+    });
+
+    boardTitle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            boardTitle.blur();
+        }
+    });
+}
+
 const board = document.getElementById('board');
 const changeBgBtn = document.getElementById('change-bg-btn');
 const addColumnBtn = document.querySelector('.add-column-btn');
@@ -62,7 +103,76 @@ const editImagePreviewContainer = editCardModal.querySelector('#edit-image-previ
 let cardToEdit = null;
 let editImageData = null;
 
-// Логіка модалки редагування
+function saveBoardState() {
+    const columns = document.querySelectorAll('.column');
+    const data = Array.from(columns).map(col => {
+        const title = col.querySelector('.column-title').textContent;
+        const cards = Array.from(col.querySelectorAll('.card')).map(card => {
+            const text = card.querySelector('.card-content').textContent;
+            const img = card.querySelector('.card-image-placeholder img');
+            return { text: text, image: img ? img.src : null };
+        });
+        return { title: title, cards: cards };
+    });
+    localStorage.setItem('kanbanData', JSON.stringify(data));
+}
+
+function loadBoardState() {
+    const savedData = localStorage.getItem('kanbanData');
+    if (!savedData || !board) return;
+
+    const data = JSON.parse(savedData);
+    document.querySelectorAll('.column').forEach(c => c.remove());
+
+    const addColumnWrapper = document.querySelector('.add-column-wrapper');
+
+    data.forEach(colData => {
+        const column = document.createElement('div');
+        column.className = 'column';
+        column.draggable = true;
+        column.innerHTML = `
+            <div class="column-header" style="position: relative;">
+                <h2 class="column-title">${colData.title}</h2>
+                <span class="column-info">Інформація про стовпець (${colData.cards.length})</span>
+                <button class="column-options-btn">⋮</button>
+                <div class="column-dropdown" style="display: none; position: absolute; right: 0; top: 30px; background: #272727; padding: 5px; border-radius: 5px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.5);">
+                    <button class="delete-column-btn" style="background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Видалити</button>
+                </div>
+            </div>
+            <div class="card-list"></div>
+            <button class="add-card-btn">+</button>
+        `;
+
+        const cardList = column.querySelector('.card-list');
+        
+        colData.cards.forEach(cardData => {
+            let imageContent = cardData.image 
+                ? `<img src="${cardData.image}" alt="Card Image" style="max-width: 100%; border-radius: 4px;">` 
+                : 'Зображення не вставлено';
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.draggable = true;
+            card.innerHTML = `
+                <button class="delete-card-btn">Видалити</button>
+                <div class="card-image-placeholder">${imageContent}</div>
+                <div class="card-content">${cardData.text}</div>
+            `;
+            
+            cardList.appendChild(card);
+            attachCardEvents(card);
+        });
+
+        if (addColumnWrapper) {
+            board.insertBefore(column, addColumnWrapper);
+        } else {
+            board.appendChild(column);
+        }
+        
+        attachColumnEvents(column);
+    });
+}
+
 closeEditBtn.addEventListener('click', () => {
     editCardModal.classList.add('hidden');
 });
@@ -102,41 +212,44 @@ saveEditBtn.addEventListener('click', () => {
     }
 
     editCardModal.classList.add('hidden');
+    saveBoardState();
 });
 
-document.querySelectorAll('.column').forEach(column => {
-    column.draggable = true;
-    attachColumnEvents(column);
-});
-document.querySelectorAll('.card').forEach(attachCardEvents);
+if (changeBgBtn) {
+    changeBgBtn.addEventListener('click', () => {
+        const newBg = prompt('Введіть URL зображення або HEX колір (наприклад, #1a1a1a або #2b1165):');
+        if (newBg) {
+            document.body.style.background = newBg.startsWith('#') ? newBg : `url(${newBg}) center/cover`;
+            localStorage.setItem('boardBackground', newBg);
+        }
+    });
+}
 
-changeBgBtn.addEventListener('click', () => {
-    const newBg = prompt('Введіть URL зображення або HEX колір (наприклад, #1a1a1a або #2b1165):');
-    if (newBg) {
-        document.body.style.background = newBg.startsWith('#') ? newBg : `url(${newBg}) center/cover`;
-    }
-});
+if (board) {
+    board.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (dragType !== 'column') return;
 
-board.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    if (dragType !== 'column') return;
+        const afterElement = getDragAfterElementColumn(board, e.clientX);
+        const draggable = document.querySelector('.column.dragging');
+        const wrapper = document.querySelector('.add-column-wrapper');
+        
+        if (afterElement == null) {
+            if(wrapper) board.insertBefore(draggable, wrapper);
+        } else {
+            board.insertBefore(draggable, afterElement);
+        }
+    });
+}
 
-    const afterElement = getDragAfterElementColumn(board, e.clientX);
-    const draggable = document.querySelector('.column.dragging');
-    const wrapper = document.querySelector('.add-column-wrapper');
-    
-    if (afterElement == null) {
-        board.insertBefore(draggable, wrapper);
-    } else {
-        board.insertBefore(draggable, afterElement);
-    }
-});
-
-addColumnBtn.addEventListener('click', () => {
-    columnModal.classList.remove('hidden');
-    columnModalInput.value = '';
-    columnModalInput.focus();
-});
+if (addColumnBtn) {
+    addColumnBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        columnModal.classList.remove('hidden');
+        columnModalInput.value = '';
+        columnModalInput.focus();
+    });
+}
 
 closeColumnBtn.addEventListener('click', () => {
     columnModal.classList.add('hidden');
@@ -163,25 +276,37 @@ saveColumnBtn.addEventListener('click', () => {
     `;
 
     const addColumnWrapper = document.querySelector('.add-column-wrapper');
-    board.insertBefore(column, addColumnWrapper);
+    if (board && addColumnWrapper) {
+        board.insertBefore(column, addColumnWrapper);
+    } else if (board) {
+        board.appendChild(column);
+    }
     
     attachColumnEvents(column);
     columnModal.classList.add('hidden');
+    saveBoardState();
 });
 
 function attachColumnEvents(column) {
-    column.querySelector('.add-card-btn').addEventListener('click', (e) => {
-        targetCardList = e.target.previousElementSibling;
-        modal.classList.remove('hidden');
-        modalInput.value = '';
-        modalInput.focus();
-    });
+    const addCardBtnElement = column.querySelector('.add-card-btn');
+    if (addCardBtnElement) {
+        addCardBtnElement.addEventListener('click', (e) => {
+            targetCardList = e.target.previousElementSibling;
+            if (modal) {
+                modal.classList.remove('hidden');
+                if (modalInput) {
+                    modalInput.value = '';
+                    modalInput.focus();
+                }
+            }
+        });
+    }
 
     const header = column.querySelector('.column-header');
-    header.style.position = 'relative';
+    if (header) header.style.position = 'relative';
 
     let dropdown = column.querySelector('.column-dropdown');
-    if (!dropdown) {
+    if (!dropdown && header) {
         dropdown = document.createElement('div');
         dropdown.className = 'column-dropdown';
         dropdown.style.cssText = 'display: none; position: absolute; right: 0; top: 30px; background: #272727; padding: 5px; border-radius: 5px; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.5);';
@@ -190,19 +315,25 @@ function attachColumnEvents(column) {
     }
 
     const optionsBtn = column.querySelector('.column-options-btn');
-    optionsBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        document.querySelectorAll('.column-dropdown').forEach(d => {
-            if (d !== dropdown) d.style.display = 'none';
+    if (optionsBtn) {
+        optionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.column-dropdown').forEach(d => {
+                if (d !== dropdown) d.style.display = 'none';
+            });
+            if (dropdown) dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
         });
-        
-        dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
-    });
+    }
 
-    dropdown.querySelector('.delete-column-btn').addEventListener('click', () => {
-        column.remove();
-    });
+    if (dropdown) {
+        const deleteColBtn = dropdown.querySelector('.delete-column-btn');
+        if (deleteColBtn) {
+            deleteColBtn.addEventListener('click', () => {
+                column.remove();
+                saveBoardState();
+            });
+        }
+    }
 
     column.addEventListener('dragstart', (e) => {
         if (e.target.closest('.card')) return; 
@@ -213,35 +344,42 @@ function attachColumnEvents(column) {
     column.addEventListener('dragend', () => {
         column.classList.remove('dragging');
         dragType = null;
+        saveBoardState();
     });
 
     const cardList = column.querySelector('.card-list');
-    cardList.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        if (dragType !== 'card') return; 
+    if (cardList) {
+        cardList.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            if (dragType !== 'card') return; 
 
-        const afterElement = getDragAfterElementCard(cardList, e.clientY);
-        const draggable = document.querySelector('.card.dragging');
-        if (afterElement == null) {
-            cardList.appendChild(draggable);
-        } else {
-            cardList.insertBefore(draggable, afterElement);
-        }
-    });
+            const afterElement = getDragAfterElementCard(cardList, e.clientY);
+            const draggable = document.querySelector('.card.dragging');
+            if (!draggable) return;
+
+            if (afterElement == null) {
+                cardList.appendChild(draggable);
+            } else {
+                cardList.insertBefore(draggable, afterElement);
+            }
+        });
+    }
 }
 
 document.addEventListener('click', () => {
     document.querySelectorAll('.column-dropdown').forEach(d => d.style.display = 'none');
 });
 
-closeModalBtn.addEventListener('click', () => {
-    modal.classList.add('hidden');
-    resetImageState();
-});
+if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+        if (modal) modal.classList.add('hidden');
+        resetImageState();
+    });
+}
 
 function resetImageState() {
     selectedImageData = null;
-    addImageBtn.textContent = '+ Додати зображення';
+    if (addImageBtn) addImageBtn.textContent = '+ Додати зображення';
     const imagePreview = document.getElementById('modal-image-preview');
     if (imagePreview) {
         imagePreview.style.display = 'none';
@@ -249,82 +387,91 @@ function resetImageState() {
     }
 }
 
-addImageBtn.addEventListener('click', () => {
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/png, image/jpeg';
+if (addImageBtn) {
+    addImageBtn.addEventListener('click', () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/png, image/jpeg';
 
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            selectedImageData = event.target.result;
-            addImageBtn.textContent = 'Зображення вибрано ✓';
-            
-            let imagePreview = document.getElementById('modal-image-preview');
-            if (!imagePreview) {
-                imagePreview = document.createElement('img');
-                imagePreview.id = 'modal-image-preview';
-                imagePreview.style.cssText = 'max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 5px; display: none; margin-top: 10px; margin-bottom: 10px;';
-                document.querySelector('.modal-content').insertBefore(imagePreview, saveCardBtn);
-            }
-            imagePreview.src = selectedImageData;
-            imagePreview.style.display = 'block';
-        };
-        reader.readAsDataURL(file);
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                selectedImageData = event.target.result;
+                addImageBtn.textContent = 'Зображення вибрано ✓';
+                
+                let imagePreview = document.getElementById('modal-image-preview');
+                if (!imagePreview) {
+                    imagePreview = document.createElement('img');
+                    imagePreview.id = 'modal-image-preview';
+                    imagePreview.style.cssText = 'max-width: 100%; max-height: 200px; object-fit: contain; border-radius: 5px; display: none; margin-top: 10px; margin-bottom: 10px;';
+                    if (saveCardBtn && saveCardBtn.parentNode) {
+                        saveCardBtn.parentNode.insertBefore(imagePreview, saveCardBtn);
+                    }
+                }
+                imagePreview.src = selectedImageData;
+                imagePreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        fileInput.click();
     });
+}
 
-    fileInput.click();
-});
+if (saveCardBtn) {
+    saveCardBtn.addEventListener('click', () => {
+        if (!modalInput || !targetCardList) return;
+        const text = modalInput.value.trim();
+        if (!text) return;
 
-saveCardBtn.addEventListener('click', () => {
-    const text = modalInput.value.trim();
-    if (!text || !targetCardList) return;
+        let imageContent = selectedImageData 
+            ? `<img src="${selectedImageData}" alt="Card Image" style="max-width: 100%; border-radius: 4px;">` 
+            : 'Зображення не вставлено';
 
-    let imageContent = selectedImageData 
-        ? `<img src="${selectedImageData}" alt="Card Image" style="max-width: 100%; border-radius: 4px;">` 
-        : 'Зображення не вставлено';
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.draggable = true;
+        card.innerHTML = `
+            <button class="delete-card-btn">Видалити</button>
+            <div class="card-image-placeholder">${imageContent}</div>
+            <div class="card-content">${text}</div>
+        `;
 
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.draggable = true;
-    card.innerHTML = `
-        <button class="delete-card-btn">Видалити</button>
-        <div class="card-image-placeholder">${imageContent}</div>
-        <div class="card-content">${text}</div>
-    `;
-
-    targetCardList.appendChild(card);
-    attachCardEvents(card);
-    updateColumnCounter(targetCardList.closest('.column'));
-    
-    modal.classList.add('hidden');
-    resetImageState();
-});
+        targetCardList.appendChild(card);
+        attachCardEvents(card);
+        const parentColumn = targetCardList.closest('.column');
+        if (parentColumn) updateColumnCounter(parentColumn);
+        
+        if (modal) modal.classList.add('hidden');
+        resetImageState();
+        saveBoardState();
+    });
+}
 
 function attachCardEvents(card) {
-    // Видалення картки
-    card.querySelector('.delete-card-btn').addEventListener('click', (e) => {
-        e.stopPropagation();
-        const column = card.closest('.column');
-        card.remove();
-        if (column) updateColumnCounter(column);
-    });
+    const deleteBtn = card.querySelector('.delete-card-btn');
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            const column = card.closest('.column');
+            card.remove();
+            if (column) updateColumnCounter(column);
+            saveBoardState();
+        });
+    }
 
-    // Відкриття модалки при кліку на саму картку
     card.addEventListener('click', () => {
         cardToEdit = card;
         
-        // Підтягуємо існуючий текст
-        editTextInput.value = card.querySelector('.card-content').textContent;
+        const contentDiv = card.querySelector('.card-content');
+        if (contentDiv) editTextInput.value = contentDiv.textContent;
         
-        // Скидаємо стан кнопки фото
         editImageData = null;
         editImageBtn.textContent = '+ Додати/Змінити ПНГ';
         
-        // Перевіряємо, чи є вже фото в картці, щоб показати його в прев'ю
         const existingImg = card.querySelector('.card-image-placeholder img');
         if (existingImg) {
             editImagePreview.src = existingImg.src;
@@ -338,7 +485,6 @@ function attachCardEvents(card) {
         editTextInput.focus();
     });
 
-    // Drag and Drop
     card.addEventListener('dragstart', (e) => {
         e.stopPropagation(); 
         dragType = 'card';
@@ -349,14 +495,15 @@ function attachCardEvents(card) {
         card.classList.remove('dragging');
         dragType = null;
         document.querySelectorAll('.column').forEach(updateColumnCounter);
+        saveBoardState();
     });
 }
 
 function updateColumnCounter(column) {
-    const count = column.querySelectorAll('.card').length;
+    const cards = column.querySelectorAll('.card');
     const infoSpan = column.querySelector('.column-info');
     if (infoSpan) {
-        infoSpan.textContent = `Інформація про стовпець (${count})`;
+        infoSpan.textContent = `Інформація про стовпець (${cards ? cards.length : 0})`;
     }
 }
 
@@ -385,3 +532,11 @@ function getDragAfterElementColumn(container, x) {
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
+
+document.querySelectorAll('.column').forEach(column => {
+    column.draggable = true;
+    attachColumnEvents(column);
+});
+document.querySelectorAll('.card').forEach(attachCardEvents);
+
+loadBoardState();
