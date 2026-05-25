@@ -7,6 +7,47 @@ dragStyles.innerHTML = `
 `;
 document.head.appendChild(dragStyles);
 
+const savedBg = localStorage.getItem('boardBackground');
+if (savedBg) {
+    document.body.style.background = savedBg.startsWith('#') ? savedBg : `url(${savedBg}) center/cover`;
+}
+
+const boardTitle = document.querySelector('.board-title');
+if (boardTitle) {
+    const savedTitle = localStorage.getItem('boardTitle');
+    if (savedTitle) {
+        boardTitle.textContent = savedTitle;
+    }
+
+    boardTitle.contentEditable = 'true';
+    boardTitle.style.cursor = 'text';
+    boardTitle.style.outline = 'none';
+    boardTitle.style.userSelect = 'auto'; 
+    boardTitle.style.pointerEvents = 'auto';
+    boardTitle.style.position = 'relative';
+    boardTitle.style.zIndex = '1000';
+
+    boardTitle.addEventListener('click', () => {
+        boardTitle.focus();
+    });
+
+    boardTitle.addEventListener('focus', () => {
+        boardTitle.style.borderBottom = '1px dashed rgba(255, 255, 255, 0.5)';
+    });
+
+    boardTitle.addEventListener('blur', () => {
+        boardTitle.style.borderBottom = 'none';
+        localStorage.setItem('boardTitle', boardTitle.textContent.trim());
+    });
+
+    boardTitle.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            boardTitle.blur();
+        }
+    });
+}
+
 const board = document.getElementById('board');
 const newBoardBtn = document.getElementById('new-board-btn');
 const changeBgBtn = document.getElementById('change-bg-btn');
@@ -303,7 +344,11 @@ saveColumnBtn.addEventListener('click', () => {
 
     const column = createColumnElement(title);
     const addColumnWrapper = document.querySelector('.add-column-wrapper');
-    board.insertBefore(column, addColumnWrapper);
+    if (board && addColumnWrapper) {
+        board.insertBefore(column, addColumnWrapper);
+    } else if (board) {
+        board.appendChild(column);
+    }
     
     attachColumnEvents(column);
     updateAllColumnCounters(); 
