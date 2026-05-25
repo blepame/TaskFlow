@@ -8,59 +8,77 @@
 </head>
 <body>
     <header class="board-header">
-        <h1 class="board-title">Назва дошки</h1>
+        <div style="display: flex; gap: 10px; align-items: center;">
+            <h1 class="board-title editable-title" contenteditable="true" spellcheck="false" title="Натисніть, щоб змінити назву">Назва дошки</h1>
+        </div>
         <div class="header-buttons">
+            <button id="new-board-btn" class="header-btn" style="background-color: #d93838;">Нова дошка</button>
             <button id="change-bg-btn" class="header-btn">Змінити фон</button>
             <button class="share-btn" id="exportBtn">Поділитися</button>
         </div>
     </header>
 
     <main class="board-container" id="board">
-        <div class="column">
-            <div class="column-header">
-                <h2 class="column-title">Текст</h2>
-                <span class="column-info">Інформація про стовпець (2)</span>
-                <button class="column-options-btn">⋮</button>
-            </div>
-            
-            <div class="card-list">
-                <div class="card" draggable="true">
-                    <button class="delete-card-btn">Видалити</button>
-                    <div class="card-image-placeholder">
-                        ПНГ (якщо користувач вставив її)
-                    </div>
-                    <div class="card-content">
-                        Контент
-                    </div>
-                </div>
-                
-                <div class="card" draggable="true">
-                    <button class="delete-card-btn">Видалити</button>
-                    <div class="card-image-placeholder">
-                        ПНГ (якщо користувач вставив її)
-                    </div>
-                    <div class="card-content">
-                        Контент
-                    </div>
-                </div>
-            </div>
-
-            <button class="add-card-btn">+</button>
-        </div>
-
         <div class="add-column-wrapper">
             <button class="add-column-btn">Додати колонку</button>
         </div>
     </main>
 
+    <div id="column-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-column-btn close-btn">&times;</span>
+            <input type="text" placeholder="Введіть назву колонки..." class="modal-column-input modal-text-input" maxlength="100">
+            <button class="save-column-btn save-modal-btn">Зберегти</button>
+        </div>
+    </div>
+
     <div id="card-modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn">&times;</span>
-            <input type="text" placeholder="Введіть текст задачі..." class="modal-text-input">
+            <textarea placeholder="Введіть текст задачі..." class="modal-text-input" maxlength="2000"></textarea>
             <button class="add-image-btn">+ Додати зображення</button>
             <button class="save-modal-btn">Зберегти</button>
         </div>
     </div>
+
+    <div id="bg-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-bg-btn close-btn">&times;</span>
+            <h3 style="margin-bottom: 5px;">Налаштування фону</h3>
+            <p style="font-size: 0.85rem; color: #ccc; margin-bottom: 10px;">
+                Введіть HEX-колір (#2b1165), URL картики або завантажте файл з ПК:
+            </p>
+            <input type="text" id="bg-text-input" class="modal-text-input" placeholder="Наприклад: #1a1a1a або https://..." style="margin-top: 0; min-height: 40px;">
+            <button id="bg-upload-btn" class="save-modal-btn" style="background-color: #4b36c4; margin-top: 10px;">📁 Завантажити своє фото</button>
+            <button id="bg-save-btn" class="save-modal-btn" style="margin-top: 10px;">Застосувати фон</button>
+        </div>
+    </div>
+
+    <div id="share-modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-share-btn close-btn">&times;</span>
+            <h3 style="margin-bottom: 5px;">Поділитися дошкою</h3>
+            
+            <div id="link-container" style="display: none; margin-top: 15px; gap: 10px; align-items: center;">
+                <input type="text" id="share-link-input" class="modal-text-input" style="margin-top: 0; flex-grow: 1; min-height: 40px; font-size: 0.9rem;" readonly>
+                <button id="copy-link-btn" class="save-modal-btn" style="margin-top: 0; background-color: #4b36c4;">Копіювати</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+                <button id="export-png-btn" class="save-modal-btn">🖼 Експортувати як картинку (Авторозмір)</button>
+                <button id="generate-link-btn" class="save-modal-btn" style="background-color: #1e1e1e; border: 1px solid #4a3499;">🔗 Отримати посилання</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="lightbox-modal" class="modal hidden">
+        <div class="modal-content lightbox-content">
+            <span class="close-lightbox-btn close-btn">&times;</span>
+            <img id="lightbox-img" src="" alt="Full view">
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="backscript.js"></script>
 </body>
 </html>
